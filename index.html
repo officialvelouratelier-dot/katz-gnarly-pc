@@ -11,7 +11,7 @@
   <!-- Save Photocard helper -->
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" defer></script>
 
-  <!-- Your app JS -->
+  <!-- App JS -->
   <script src="script.js" defer></script>
 </head>
 <body>
@@ -33,6 +33,7 @@
       <!-- Header -->
       <header class="topbar">
         <div class="brand-wrap">
+          <!-- If you upload a local logo later: src="assets/img/katz-logo.png" -->
           <img class="katz-logo" alt="KATZ Logo"
                src="https://drive.google.com/thumbnail?id=1QSclQ9rR8iGnLevud9CCxqx7tWRcavlQ&sz=w500" />
           <h1>KATZ Lucky Draw</h1>
@@ -42,6 +43,7 @@
 
       <!-- Machine -->
       <div class="machine">
+        <!-- If you upload a local bg later: src="assets/img/group.jpg" -->
         <img class="group-bg" alt="KATZ Group"
              src="https://drive.google.com/thumbnail?id=1h0udcmnkqYUWCM7HoGWRnb4yj_bYjDGM&sz=w1200" />
 
@@ -64,7 +66,8 @@
             </div>
             <div class="card-face card-back">
               <div class="pc-photo-wrap">
-                <img id="pcImg" alt="Photocard" />
+                <!-- IMPORTANT for downloads -->
+                <img id="pcImg" alt="Photocard" crossorigin="anonymous" />
               </div>
               <div class="pc-meta">
                 <span id="pcName" class="pc-name">—</span>
