@@ -1,3 +1,18 @@
+console.log('[KATZ] script.js loaded');
+
+window.addEventListener('error', e => {
+  console.error('[KATZ] Global error:', e.message, e.filename, e.lineno);
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  console.log('[KATZ] DOM ready');
+
+  const btn = document.getElementById('pullBtn');
+  console.log('[KATZ] pullBtn:', btn);
+  if (btn) btn.addEventListener('click', () => console.log('[KATZ] Pull clicked'));
+  
+  // ...rest of your code goes here...
+});
 document.addEventListener('DOMContentLoaded', () => {
   // helper for local assets
   const asset = (file) => `assets/img/${file}`;
