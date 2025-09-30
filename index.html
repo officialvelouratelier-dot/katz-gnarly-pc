@@ -1,0 +1,106 @@
+<main class="app">
+  <section class="stage">
+    <!-- Gooey filter for sparkles -->
+    <svg width="0" height="0" style="position:absolute">
+      <filter id="goo">
+        <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blur"/>
+        <feColorMatrix in="blur" mode="matrix"
+          values="1 0 0 0 0
+                  0 1 0 0 0
+                  0 0 1 0 0
+                  0 0 0 20 -10" result="goo"/>
+        <feBlend in="SourceGraphic" in2="goo"/>
+      </filter>
+    </svg>
+
+    <!-- Header -->
+    <header class="topbar">
+      <div class="brand-wrap">
+        <img class="katz-logo" alt="KATZ Logo"
+             src="https://drive.google.com/thumbnail?id=1QSclQ9rR8iGnLevud9CCxqx7tWRcavlQ&sz=w500" />
+        <h1>KATZ Lucky Draw</h1>
+      </div>
+      <div class="odds-tip" title="Common 40% • Uncommon 25% • Rare 10% • Legendary 25%">ⓘ Odds</div>
+    </header>
+
+    <!-- Machine -->
+    <div class="machine">
+      <img class="group-bg" alt="KATZ Group"
+           src="https://drive.google.com/thumbnail?id=1h0udcmnkqYUWCM7HoGWRnb4yj_bYjDGM&sz=w1200" />
+
+      <button id="lever" class="lever" aria-label="Pull lever">
+        <span class="lever-stick"></span>
+        <span class="lever-knob"></span>
+      </button>
+
+      <button id="pullBtn" class="pull">Pull</button>
+    </div>
+
+    <!-- Reveal -->
+    <div class="reveal-zone">
+      <div id="card" class="card">
+        <div class="card-inner">
+          <div class="card-face card-front">
+            <div class="front-overlay"></div>
+            <div class="brand">KATZ</div>
+            <div class="hint">Tap to Flip</div>
+          </div>
+          <div class="card-face card-back">
+            <div class="pc-photo-wrap">
+              <img id="pcImg" alt="Photocard" />
+            </div>
+            <div class="pc-meta">
+              <span id="pcName" class="pc-name">—</span>
+              <span id="pcGroup" class="pc-group">KATZ</span>
+              <span id="pcRarity" class="pc-rarity">—</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button id="saveBtn" class="ghost">Save Photocard</button>
+        <button id="againBtn" class="secondary">Again</button>
+      </div>
+    </div>
+
+    <!-- Recent -->
+    <section class="recent">
+      <h2>Recent Pulls</h2>
+      <div id="recentList" class="recent-list" aria-live="polite"></div>
+    </section>
+
+    <!-- Sparkles -->
+    <div id="sparkles" class="sparkles"></div>
+
+    <!-- Sounds -->
+    <audio id="sfxLever" preload="auto" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_7cda8f2c82.mp3?filename=lever-click-142499.mp3"></audio>
+    <audio id="sfxReveal" preload="auto" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_55ed7e9a2e.mp3?filename=ui-confirmation-alert-98734.mp3"></audio>
+    <audio id="sfxLegendary" preload="auto" src="https://cdn.pixabay.com/download/audio/2021/08/04/audio_0e1f2e387b.mp3?filename=success-fanfare-trumpets-6185.mp3"></audio>
+    <!-- Mini-game SFX -->
+    <audio id="sfxRight" preload="auto" src="https://cdn.pixabay.com/download/audio/2022/03/10/audio_e2b9c35a7e.mp3?filename=success-1-6297.mp3"></audio>
+    <audio id="sfxWrong" preload="auto" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_1b770f2325.mp3?filename=error-2-126514.mp3"></audio>
+    <audio id="sfxOut" preload="auto" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_5d3a882f4a.mp3?filename=retro-lose-126477.mp3"></audio>
+
+    <!-- Legendary Mini-game (multiple choice) -->
+    <div id="minigame" class="modal hidden" aria-hidden="true">
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="mg-title">
+        <h3 id="mg-title">Legendary Bonus 🎉</h3>
+        <p class="mg-sub">Complete the lyric to earn <strong>one extra pull</strong>. Tokens left: <strong id="tokenCount">2</strong></p>
+
+        <div class="mg-q">
+          <span id="lyricPrompt">“Everything's ____”</span>
+        </div>
+
+        <div id="choiceWrap" class="choices" role="group" aria-label="Choose the missing word"></div>
+
+        <div id="miniMsg" class="mg-msg" aria-live="polite"></div>
+
+        <div class="mg-row">
+          <button id="closeMini" class="mg-btn">Close</button>
+        </div>
+      </div>
+    </div>
+    <!-- /mini-game -->
+  </section>
+</main>
