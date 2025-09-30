@@ -7,10 +7,10 @@ window.addEventListener('error', e => {
 document.addEventListener('DOMContentLoaded', () => {
   console.log('[KATZ] DOM ready');
 
-  // helper for local assets
+  // ---------- Helpers / Data ----------
   const asset = (file) => `assets/img/${file}`;
 
-  // ---- Photocards (KATZ) ----
+  // Photocards (local PNG paths)
   const CARDS = [
     // MEPHI
     { id:'mephi-common',    name:'Mephi',  group:'KATZ', rarity:'common',    image:asset('mephi-common.png') },
@@ -49,10 +49,19 @@ document.addEventListener('DOMContentLoaded', () => {
     { id:'rubi-legendary', name:'Rubi', group:'KATZ', rarity:'legendary', image:asset('rubi-legendary.png') },
   ];
 
-  // ---- Rarity odds ----
+  // Rarity odds (sum = 100)
   const RARITY_WEIGHTS = { common:40, uncommon:25, rare:10, legendary:25 };
 
-  // ---- DOM elements ----
+  // Mini-game questions (multiple-choice)
+  const QUESTIONS = [
+    { prompt: `“Everything's ____”`, correct: "gnarly", pool: ["gnarly","vibe","slay","lit"] },
+    { prompt: `“Boba tea (____)”`, correct: "gnarly", pool: ["gnarly","sweet","cool","yum"] },
+    { prompt: `“Oh, we're in a session tonight (____)”`, correct: "gang", pool: ["gang","gnarly","crew","ride"] },
+    { prompt: `“Na-na-na, na-na-____ (gnarly)”`, correct: "gnarly", pool: ["gnarly","la-la","yeah","woah"] },
+    { prompt: `“Don't talk to me, you're ____”`, correct: "gnarly", pool: ["gnarly","mean","loud","fake"] },
+  ];
+
+  // ---------- DOM ----------
   const lever = document.getElementById('lever');
   const pullBtn = document.getElementById('pullBtn');
   const againBtn = document.getElementById('againBtn');
@@ -67,6 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const sparkles = document.getElementById('sparkles');
   const recentList = document.getElementById('recentList');
 
+  // sounds already in your HTML
   const sfxLever = document.getElementById('sfxLever');
   const sfxReveal = document.getElementById('sfxReveal');
   const sfxLegendary = document.getElementById('sfxLegendary');
@@ -74,11 +84,23 @@ document.addEventListener('DOMContentLoaded', () => {
   const sfxWrong = document.getElementById('sfxWrong');
   const sfxOut = document.getElementById('sfxOut');
 
-  // ---- State ----
+  // Mini-game modal DOM
+  const mini = document.getElementById('minigame');
+  const lyricPrompt = document.getElementById('lyricPrompt');
+  const choiceWrap = document.getElementById('choiceWrap');
+  const closeMini = document.getElementById('closeMini');
+  const tokenCount = document.getElementById('tokenCount');
+  const miniMsg = document.getElementById('miniMsg');
+
+  // ---------- State ----------
   let isPulling = false;
   let currentCard = null;
 
-  // ---- Utils ----
+  // Mini-game tokens
+  let tokensLeft = 2;
+  if (tokenCount) tokenCount.textContent = tokensLeft;
+
+  // ---------- Utils ----------
   const wait = (ms) => new Promise(r => setTimeout(r, ms));
 
   function weightedRandomRarity(){
@@ -99,9 +121,13 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function applyRarityStyles(rarity){
-    card.classList.remove('common','uncommon','rare','legendary');
+    card.classList.remove('common','uncommon','rare','legendary','is-flipped');
     card.classList.add(rarity);
     pcRarity.textContent = rarity[0].toUpperCase()+rarity.slice(1);
+  }
+
+  function flipToBack(){
+    if (!card.classList.contains('is-flipped')) card.classList.add('is-flipped');
   }
 
   function spawnSparklesBurst(count=36){
@@ -131,59 +157,144 @@ document.addEventListener('DOMContentLoaded', () => {
     while (recentList.children.length > 12) recentList.lastChild.remove();
   }
 
-  function flipToBack(){
-    if (!card.classList.contains('is-flipped')) card.classList.add('is-flipped');
-  }
-
   function resetCard(){
     card.classList.remove('is-flipped','common','uncommon','rare','legendary');
     pcImg.removeAttribute('src');
     pcName.textContent = '—';
+    pcGroup.textContent = 'KATZ';
     pcRarity.textContent = '—';
   }
 
-  async function handlePull(){
+  // ---------- Mini-game ----------
+  function shuffle(arr){
+    for(let i=arr.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [arr[i],arr[j]] = [arr[j],arr[i]];
+    }
+    return arr;
+  }
+
+  function pickQuestion(){ return QUESTIONS[Math.floor(Math.random()*QUESTIONS.length)]; }
+
+  function buildChoices(q){
+    choiceWrap.innerHTML = '';
+    const choices = shuffle([q.correct, ...q.pool]).slice(0,4);
+    shuffle(choices).forEach(text=>{
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'choice';
+      btn.textContent = text;
+      btn.dataset.correct = String(text.toLowerCase() === q.correct.toLowerCase());
+      btn.addEventListener('click', onChoose);
+      choiceWrap.appendChild(btn);
+    });
+  }
+
+  function openMinigame(){
+    if (!mini) return;
+    if (tokensLeft <= 0){
+      miniMsg.textContent = "Out of tokens. Refresh the page to try again.";
+      Array.from(choiceWrap.children).forEach(c => c.disabled = true);
+    } else {
+      miniMsg.textContent = "";
+      const q = pickQuestion();
+      lyricPrompt.textContent = q.prompt;
+      buildChoices(q);
+    }
+    mini.classList.remove('hidden');
+    mini.setAttribute('aria-hidden','false');
+  }
+
+  function closeMinigame(){
+    if (!mini) return;
+    mini.classList.add('hidden');
+    mini.setAttribute('aria-hidden','true');
+  }
+
+  function onChoose(e){
+    if (tokensLeft <= 0) return;
+    const btn = e.currentTarget;
+    const isCorrect = btn.dataset.correct === 'true';
+
+    tokensLeft -= 1;
+    if (tokenCount) tokenCount.textContent = tokensLeft;
+
+    Array.from(choiceWrap.children).forEach(c => c.disabled = true);
+
+    if (isCorrect){
+      btn.classList.add('correct');
+      miniMsg.textContent = "Correct! Bonus pull unlocked 🌟";
+      try { sfxRight.currentTime = 0; sfxRight.play(); } catch {}
+      setTimeout(()=>{ closeMinigame(); handlePull(/*fromMini*/true); }, 600);
+    } else {
+      btn.classList.add('wrong');
+      try { sfxWrong.currentTime = 0; sfxWrong.play(); } catch {}
+      if (tokensLeft > 0){
+        miniMsg.textContent = "Close! One token left — new lyric coming up…";
+        setTimeout(()=>{
+          const q = pickQuestion();
+          lyricPrompt.textContent = q.prompt;
+          buildChoices(q);
+          miniMsg.textContent = "";
+        }, 650);
+      } else {
+        miniMsg.textContent = "No tokens left — refresh the page to try again.";
+        try { sfxOut.currentTime = 0; sfxOut.play(); } catch {}
+      }
+    }
+  }
+
+  // ---------- Pull flow ----------
+  async function handlePull(fromMini=false){
     if (isPulling) return;
     isPulling = true;
+
+    // start animation
     resetCard();
-
-    sfxLever.currentTime=0; sfxLever.play().catch(()=>{});
-    lever.classList.add('pulled');
+    try { sfxLever.currentTime = 0; sfxLever.play(); } catch {}
+    lever?.classList.add('pulled');
     await wait(500);
-    lever.classList.remove('pulled');
+    lever?.classList.remove('pulled');
 
+    // pick & reveal
     const picked = pickCard();
     currentCard = picked;
 
-    await wait(500);
+    await wait(400);
     pcImg.src = picked.image;
     pcName.textContent = picked.name;
     pcGroup.textContent = picked.group;
     applyRarityStyles(picked.rarity);
     flipToBack();
 
-    sfxReveal.currentTime=0; sfxReveal.play().catch(()=>{});
+    try { sfxReveal.currentTime = 0; sfxReveal.play(); } catch {}
 
+    // rarity effects + mini-game for legendary
     if (picked.rarity === 'legendary'){
-      sfxLegendary.currentTime=0; sfxLegendary.play().catch(()=>{});
+      try { sfxLegendary.currentTime = 0; sfxLegendary.play(); } catch {}
       spawnSparklesBurst(80);
+      // only open the mini-game if this pull did not already come *from* the mini-game
+      if (!fromMini && tokensLeft > 0){
+        openMinigame();
+      }
     } else if (picked.rarity === 'rare'){
       spawnSparklesBurst(50);
     } else if (picked.rarity === 'uncommon'){
       spawnSparklesBurst(30);
     } else {
-      spawnSparklesBurst(15);
+      spawnSparklesBurst(18);
     }
 
     addRecentThumb(picked);
     isPulling = false;
   }
 
+  // ---------- Save card (PNG, with fallback) ----------
   async function saveCurrentCard(){
     try { if (typeof sfxSave !== 'undefined') { sfxSave.currentTime = 0; sfxSave.play(); } } catch {}
     const node = card;
-    const flipped = card.classList.contains('is-flipped');
-    if (!flipped) card.classList.add('is-flipped');
+    const wasFlipped = card.classList.contains('is-flipped');
+    if (!wasFlipped) card.classList.add('is-flipped');
     try {
       const scale = Math.min(2, Math.max(1, 800 / node.clientWidth));
       const canvas = await html2canvas(node, { backgroundColor: null, scale, useCORS: true });
@@ -199,12 +310,17 @@ document.addEventListener('DOMContentLoaded', () => {
       document.body.appendChild(a); a.click(); a.remove();
       console.warn('Canvas save failed, fallback used:', err);
     } finally {
-      if (!flipped) card.classList.remove('is-flipped');
+      if (!wasFlipped) card.classList.remove('is-flipped');
     }
   }
 
-  // ---- Event listeners ----
-  pullBtn.addEventListener('click', handlePull);
+  // ---------- Events ----------
+  pullBtn.addEventListener('click', () => handlePull(false));
   againBtn.addEventListener('click', resetCard);
   saveBtn.addEventListener('click', saveCurrentCard);
+  card.addEventListener('click', () => card.classList.toggle('is-flipped'));
+  if (closeMini) closeMini.addEventListener('click', closeMinigame);
+  window.addEventListener('keydown', (e)=>{ if (e.code === 'Space') { e.preventDefault(); handlePull(false); } });
+
+  console.log('[KATZ] ready ✓');
 });
